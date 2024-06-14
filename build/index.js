@@ -6,7 +6,6 @@ gpio.pinMode(18, gpio.PinMode.INPUT);
 gpio.pinMode(16, gpio.PinMode.INPUT);
 gpio.pinMode(42, gpio.PinMode.INPUT);
 /* ================================ */
-const brightness = 0.5;
 const ledStrip = new SmartLed(21, 64, LED_WS2812);
 /* ================================ */
 const colors = [
@@ -27,20 +26,42 @@ const colors = [
     { r: 1, g: 0, b: 1 }, // 14 - home
 ];
 /* ================================ */
-const file = fs.open("test.K99", "r");
-file.close();
+// const size_file = fs.open("test.K99.size", "r");
+// const file_size = Number(size_file.read(10));
+// size_file.close();
+const file_size = 1000000;
+const chunk_size = 10000;
+let buffer = [];
+async function read_file() {
+    const file = fs.open("test.K99", "r");
+    let read = file.read(chunk_size);
+    console.log(Math.ceil(file_size / chunk_size));
+    for (let o = 0; o < Math.ceil(file_size / chunk_size); o++) {
+        await sleep(5);
+        console.log(buffer.length);
+        buffer.push(read);
+        read = file.read(chunk_size);
+    }
+    file.close();
+    console.log(buffer);
+}
+//
+//const file_content = file.read(13000);
+//
+//const lines = file_content.split("\n");
+//console.log(lines);
 /* ================================ */
 const map_size = 8;
 const map = [];
 for (let i = 0; i < map_size; i++) {
     map[i] = new Array(map_size).fill(0);
 }
-for (let i = 1; i < 8; i++) {
-    map[i][0] = i;
-}
-for (let i = 9; i < 15; i++) {
-    map[i - 9][1] = i;
-}
+// for (let i = 1; i < 8; i++) {
+//   map[i][0] = i;
+// }
+// for (let i = 9; i < 15; i++) {
+//   map[i - 9][1] = i;
+// }
 /* ======== */
 /* 0 = up            [North]     Sever
  * 1 = left  (<-)    [WEST]      Západ
@@ -122,10 +143,26 @@ function pick_flag() {
 }
 function is_wall_if_front() {
     let pos = get_pos_in_front();
-    if (pos.x < 0 || pos.x > map_size - 1 || pos.y < 0 || pos.y > map_size - 1 || map[pos.x][pos.y] == 9) {
-        return true;
-    }
-    return false;
+    return (pos.x < 0 ||
+        pos.x > map_size - 1 ||
+        pos.y < 0 ||
+        pos.y > map_size - 1 ||
+        map[pos.x][pos.y] == 9);
+}
+function at_home() {
+    return k_x == k_home_x && k_y == k_home_y;
+}
+function facing_north() {
+    return k_dir == 0;
+}
+function facing_west() {
+    return k_dir == 1;
+}
+function facing_south() {
+    return k_dir == 2;
+}
+function facing_east() {
+    return k_dir == 3;
 }
 /* ================================ */
 function draw_map() {
@@ -147,14 +184,19 @@ function draw_map() {
     });
     ledStrip.show();
 }
-draw_map();
+/* ================================ */
 gpio.on("falling", 18, () => {
     turn_left();
     draw_map();
-    console.log(is_wall_if_front());
 });
 gpio.on("falling", 16, () => {
     step();
     draw_map();
-    console.log(is_wall_if_front());
 });
+/* ================================ */
+async function main() {
+    await read_file();
+    console.log(buffer.length);
+}
+main();
+// test_max_num()
