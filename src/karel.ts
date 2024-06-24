@@ -1,47 +1,168 @@
-import * as fs from "fs";
+const ALIASES: { [key: string]: string } = {
+  KROK: "STEP",
+  "VLEVO-VBOK": "LEFT",
+  ZVEDNI: "PICK",
+  POLOŽ: "PLACE",
+  OPAKUJ: "REPEAT",
+  KRÁT: "TIMES",
+  DOKUD: "UNTIL",
+  KDYŽ: "IF",
+  JINAK: "ELSE",
+  JE: "IS",
+  NENÍ: "ISNOT",
+  ZEĎ: "WALL",
+  ZNAČKA: "FLAG",
+  DOMOV: "HOME",
+  SEVER: "NORTH",
+  JIH: "SOUTH",
+  ZÁPAD: "WEST",
+  VÝCHOD: "EAST",
+  KONEC: "END",
+  "Velikost města": "Map size",
+  "Pozice Karla": "Karel position",
+  "Otočení Karla": "Karel rotation",
+  "Umístění domova": "Home position",
+  "Definice města": "Map definition",
+};
 
-/* ================================ */
-// const size_file = fs.open("test.K99.size", "r");
-// const file_size = Number(size_file.read(10));
-// size_file.close();
+let Karel_stop: boolean = false;
 
-const file_size = 1000000
-const chunk_size = 100
+class Functions {
+  static FUNCTIONS: { [key: string]: Function } = {
+    STEP: Functions.Step,
+    LEFT: Functions.Turn_left,
+    PICK: Functions.Pick,
+    PLACE: Functions.Place,
+  };
 
-let buffer = [];
+  static Step(): void {
+    // Implementation goes here
 
-async function read_file() {
-  const file = fs.open("test.K", "r");
+    const old_x = k_x;
+    const old_y = k_y;
 
-  let read = file.read(chunk_size);
-  console.log(Math.ceil(file_size / chunk_size))
+    switch (k_dir) {
+      case 0:
+        k_y--;
+        break;
+      case 1:
+        k_x--;
+        break;
+      case 2:
+        k_y++;
+        break;
+      case 3:
+        k_x++;
+        break;
 
-  for (let o = 0; o < Math.ceil(file_size / chunk_size); o++) {
-    await sleep(5)
-    console.log(buffer.length)
-    buffer.push(read);
-    read = file.read(chunk_size);
+      default:
+        break;
+    }
+
+    console.log(`forward: x:${old_x} y:${old_y} -> x:${k_x} y:${k_y}`);
   }
 
-  file.close();
+  static Turn_left(): void {
+    // Implementation goes here
 
-  console.log(buffer)
+    const old_dir = k_dir;
+
+    k_dir += 1;
+    if (k_dir == 4) {
+      k_dir = 0;
+    }
+
+    console.log(`left: dir:${old_dir} -> dir:${k_dir}`);
+  }
+
+  static Place(): void {
+    // Implementation goes here
+
+    k_pen = true;
+    console.log(`lowered pen`);
+  }
+
+  static Pick(): void {
+    // Implementation goes here
+
+    k_pen = false;
+    console.log(`picked up pen`);
+  }
+
+  static Is_wall_front(): boolean {
+    const sensor: boolean = false; // Placeholder value
+    console.log(`is wall front: ${sensor} x:${k_x} y:${k_y} `);
+    return sensor;
+  }
+
+  static Is_wall_left(): boolean {
+    const sensor: boolean = false; // Placeholder value
+    console.log(`is wall left: ${sensor} x:${k_x} y:${k_y} `);
+    return sensor;
+  }
+
+  static Is_wall_right(): boolean {
+    const sensor: boolean = false; // Placeholder value
+    console.log(`is wall right: ${sensor} x:${k_x} y:${k_y} `);
+    return sensor;
+  }
+
+  static Is_flag(): boolean {
+    return k_pen; // Return if pen is up (false) or down (true)
+  }
+
+  static At_home(): boolean {
+    const bool: boolean = k_x == k_home_x && k_y == k_home_y;
+    console.log(`at home: ${bool} x:${k_x} y:${k_y} `);
+    return bool;
+  }
+
+  static Facing_north(): boolean {
+    const bool: boolean = k_dir == 0;
+    console.log(`facing north (up): ${bool}`);
+    return bool;
+  }
+
+  static Facing_south(): boolean {
+    const bool: boolean = k_dir == 2;
+    console.log(`facing south (down): ${bool}`);
+    return bool;
+  }
+
+  static Facing_east(): boolean {
+    const bool: boolean = k_dir == 3;
+    console.log(`facing east (right): ${bool}`);
+    return bool;
+  }
+
+  static Facing_west(): boolean {
+    const bool: boolean = k_dir == 1;
+    console.log(`facing west (left): ${bool}`);
+    return bool;
+  }
+
+  static Stop(): void {
+    Karel_stop = true;
+  }
 }
 
-//
-//const file_content = file.read(13000);
-//
-//const lines = file_content.split("\n");
-//console.log(lines);
+const IF_LIST: { [key: string]: () => boolean } = {
+  WALL: Functions.Is_wall_front,
+  FLAG: Functions.Is_flag,
+  HOME: Functions.At_home,
+  NORTH: Functions.Facing_north,
+  SOUTH: Functions.Facing_south,
+  EAST: Functions.Facing_east,
+  WEST: Functions.Facing_west,
+};
 
-/* ================================ */
+export function load(str: string): void {
+  Code.load(str);
+}
 
-// for (let i = 1; i < 8; i++) {
-//   map[i][0] = i;
-// }
-// for (let i = 9; i < 15; i++) {
-//   map[i - 9][1] = i;
-// }
+export function run(func: string): void {
+  Code.run(func);
+}
 
 /* ================================ */
 
@@ -55,115 +176,190 @@ let k_x: number = 0; // ->
 let k_y: number = 0; // down
 let k_home_x: number = 0;
 let k_home_y: number = 0;
+let k_pen: boolean = false;
 
 /* ================================ */
 
-function turn_left(): void {
-  // TODO - Left
+class Code {
+  static code: string[] = [];
+  static commented_code: string[] = [];
+  static function_definitions: { [key: string]: string[] } = {}; // The commands under the function
 
-  const old_dir = k_dir;
+  static ready: boolean = false;
 
-  k_dir += 1;
-  if (k_dir == 4) {
-    k_dir = 0;
+  static format_code(raw_code: string): string[] {
+    // Fix some characters and remove newlines
+    let in_code = raw_code.split("\n");
+
+    // Translate to english
+    let translated_code: string[] = [];
+    for (let line of in_code) {
+      for (let key in ALIASES) {
+        line = line.replace(key, ALIASES[key]);
+      }
+      translated_code.push(line);
+    }
+
+    // Remove comments and save them to commented_code
+    in_code = translated_code;
+    let uncommented_code: string[] = [];
+    for (let line of in_code) {
+      if (line.length > 0) {
+        if (line[0] === "#") {
+          Code.commented_code.push(line);
+        } else {
+          uncommented_code.push(line.toUpperCase());
+        }
+      }
+    }
+
+    return uncommented_code;
   }
 
-  console.log('left: dir:${old_dir} -> dir:${k_dir}')
-
-}
-
-function step(): void {
-  // TODO - Forward
-
-  const old_x = k_x;
-  const old_y = k_y;
-
-  switch (k_dir) {
-    case 0:
-      k_y--;
-      break;
-    case 1:
-      k_x--;
-      break;
-    case 2:
-      k_y++;
-      break;
-    case 3:
-      k_x++;
-      break;
-
-    default:
-      break;
+  static load(raw_code: string): void {
+    Code.ready = false;
+    Code.code = Code.format_code(raw_code);
+    Code.split_functions();
+    Code.ready = true;
   }
 
-  console.log('forward: x:${old_x} y:${old_y} -> x:${k_x} y:${k_y}')
+  static split_functions(): void {
+    let in_code = Code.code;
+    let func_code: string[] = [];
+    let func_name: string = "";
 
-}
+    for (let line of in_code) {
+      if (line.startsWith("END")) {
+        Code.function_definitions[func_name] = func_code;
 
-function place(): void {
-  // TODO - Place pen on paper
-  console.log('lowered pen')
+        func_code = [];
+        func_name = "";
+      } else if (line.startsWith(" ")) {
+        func_code.push(line);
+      } else {
+        func_name = line;
+      }
+    }
+  }
 
-}
-function pick(): void {
-  // TODO - Pick pen up
-  console.log('picked up pen')
-}
+  static run(func_name: string): void {
+    if (Code.ready) {
+      if (func_name in Code.function_definitions) {
+        Code.run_func_list(Code.function_definitions[func_name]);
+      }
+    }
+  }
 
-function is_wall_front(): boolean {
-  // TODO - Get front sensor
-  const sensor: boolean = false;
-  console.log('is wall front: ${sensor} x:${k_x} y:${k_y} ')
-  return sensor
-}
+  static run_func_list(func_list: string[]): void {
+    let index = 0;
+    while (index < func_list.length) {
+      if (Karel_stop) {
+        return;
+      }
+      let line = func_list[index].trim();
 
-function is_wall_left(): boolean {
-  // TODO - Get left sensor
-  const sensor: boolean = false;
-  console.log('is wall left: ${sensor} x:${k_x} y:${k_y} ')
-  return sensor
-}
+      if (line in Functions.FUNCTIONS) {
+        Functions.FUNCTIONS[line]();
+      } else if (line.startsWith("WHILE")) {
+        let conditions = line.replace("WHILE", "").trim().split(" ");
+        let tab_count = func_list[0].split("   ").length - 1;
+        let tmp_index = index + 1;
+        let tmp_code: string[] = [];
+        while (true) {
+          if (func_list[tmp_index] === "   ".repeat(tab_count) + "END") {
+            break;
+          } else {
+            tmp_code.push(func_list[tmp_index]);
+          }
+          tmp_index++;
+        }
+        index = tmp_index;
 
-function is_wall_right(): boolean {
-  // TODO - Get left sensor
-  const sensor: boolean = false;
-  console.log('is wall right: ${sensor} x:${k_x} y:${k_y} ')
-  return sensor
-}
+        if (tmp_code.length === 0) {
+          continue;
+        }
 
-function at_home(): boolean {
-  const bool: boolean = k_x == k_home_x && k_y == k_home_y;
-  console.log('at home: ${bool} x:${k_x} y:${k_y} ')
-  return bool
-}
+        while (!Karel_stop) {
+          if (IF_LIST[conditions[1]]() === (conditions[0] === "IS")) {
+            Code.run_func_list(tmp_code);
+          } else {
+            break;
+          }
+        }
 
-function facing_north(): boolean {
-  const bool: boolean = k_dir == 0;
-  console.log('facing north (up): ${bool}')
-  return bool
-}
-function facing_west(): boolean {
-  const bool: boolean = k_dir == 1;
-  console.log('facing west (left): ${bool}')
-  return bool
-}
-function facing_south(): boolean {
-  const bool: boolean = k_dir == 2;
-  console.log('facing south (down): ${bool}')
-  return bool
-}
-function facing_east(): boolean {
-  const bool: boolean = k_dir == 3;
-  console.log('facing east (right): ${bool}')
-  return bool
-}
+      } else if (line.startsWith("IF")) {
+        let conditions = line.replace("IF", "").trim().split(" ");
+        let tab_count = func_list[0].split("   ").length - 1;
+        let tmp_index = index + 1;
+        let if_tmp_code: string[] = [];
+        let else_tmp_code: string[] = [];
+        let else_detected = false;
+        while (true) {
+          if (func_list[tmp_index] === "   ".repeat(tab_count) + "END") {
+            break;
+          } else {
+            if (func_list[tmp_index].trim() === "ELSE") {
+              else_detected = true;
+              tmp_index++;
+              continue;
+            }
+            if (!else_detected) {
+              if_tmp_code.push(func_list[tmp_index]);
+            } else {
+              else_tmp_code.push(func_list[tmp_index]);
+            }
+          }
+          tmp_index++;
+        }
+        index = tmp_index;
 
-/* ================================ */
+        if (if_tmp_code.length === 0) {
+          continue;
+        }
+        if (conditions[0] === "IS" && IF_LIST[conditions[1]]()) {
+          Code.run_func_list(if_tmp_code);
+        } else {
+          Code.run_func_list(else_tmp_code);
+        }
+      } else if (line.startsWith("REPEAT")) {
+        let tab_count = func_list[0].split("   ").length - 1;
+        let tmp_index = index + 1;
+        let tmp_code: string[] = [];
+        while (true) {
+          if (func_list[tmp_index] === "   ".repeat(tab_count) + "END") {
+            break;
+          } else {
+            tmp_code.push(func_list[tmp_index]);
+          }
+          tmp_index++;
+        }
+        index = tmp_index;
 
-async function main() {
-  await read_file()
+        if (tmp_code.length === 0) {
+          continue;
+        }
 
-  console.log(buffer.length)
+        for (
+          let i = 0;
+          i < parseInt(line.replace("REPEAT ", "").replace("-TIMES", ""));
+          i++
+        ) {
+          if (Karel_stop) {
+            return;
+          }
+          Code.run_func_list(tmp_code);
+        }
+      } else if (line.startsWith("END")) {
+        // just to be safe, but not used (hopefully)
+      } else {
+        try {
+          Code.run_func_list(Code.function_definitions[line]); // recursive
+        } catch (e) {
+          // missing funcs are interpreted as no-ops
+        }
+      }
+
+      index++;
+    }
+  }
 }
-
-main()
